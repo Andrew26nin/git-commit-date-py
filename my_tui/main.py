@@ -33,7 +33,7 @@ class Commit:
 
     def __repr__(self):
         # return f"Commit(hash={self.hash}, name='{self.name}', email='{self.email}', date='{self.date}', subject='{self.subject}')"
-        return f"{self.hash} - {self.name} - {self.email} - {self.date} - {self.subject}"
+        return f"{self.date} -  {self.subject}  - {self.name}"
 
 def parse_git_log(output_lines)->List[Commit]:
     commits = []
@@ -86,7 +86,7 @@ def convert_input_date_to_commit_date(date_string):
 
 def main():
     while True:
-        output_lines = read_lines_from_file("test-small.txt")
+        output_lines = read_lines_from_file("test.txt")
         commits = parse_git_log(output_lines)
         choices = [
             {"name": str(commit), "value": commit, "disabled": False}
