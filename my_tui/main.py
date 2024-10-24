@@ -7,7 +7,9 @@ from typing import List
 import questionary
 from rich.console import Console
 from rich.panel import Panel
-
+import subprocess
+import os
+import sys
 
 console = Console()
 # Получить список коммитов
@@ -84,9 +86,25 @@ def convert_input_date_to_commit_date(date_string):
     dt = datetime.strptime(date_string, "%Y.%m.%d %H:%M:%S %z")
     return dt.strftime("%a %b %d %H:%M:%S %Y %z")
 
+
+def get_git_log(repo_path):
+    cmd = "cd {}; git log --pretty".format(repo_path)
+    try:
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
+        out, error = process.communicate(timeout=10)
+        return_code = process.returncode
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, cmd, out)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(e.output)
+    else:
+        return str(out, 'utf-8').split('\n')
+
+
 def main():
     while True:
-        output_lines = read_lines_from_file("test.txt")
+        # output_lines = read_lines_from_file("test.txt")
+        output_lines = get_git_log("/home/andrew/TEST_GIT")
         commits = parse_git_log(output_lines)
         choices = [
             {"name": str(commit), "value": commit, "disabled": False}
