@@ -1,13 +1,10 @@
-import json
-import os
-
 import questionary
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 
 console = Console()
 
+EXIT_FLAG=">> Выход"
 
 def read_lines_from_file(filename):
     try:
@@ -18,19 +15,10 @@ def read_lines_from_file(filename):
         return []
 
 
-def display_menu(lines):
-    table = Table(title="Выберите строку")
-    table.add_column("ID", justify="right", style="cyan")
-    table.add_column("Строка", style="magenta")
-
-    for i, line in enumerate(lines, start=1):
-        table.add_row(str(i), line.strip())
-
-    console.print(table)
-
-
 def select_line(lines):
     choices = [line.strip() for line in lines]
+    choices.append(EXIT_FLAG)
+
     selected_line = questionary.select(
         "Выберите строку:", choices=choices, default=None
     ).ask()
@@ -49,8 +37,9 @@ def main():
     while True:
         selected_line = select_line(lines)
 
-        if selected_line is None:
-            continue
+        if selected_line == EXIT_FLAG or selected_line is None:
+            console.print("[green]Спасибо за использование программы![/green]")
+            break
 
         console.print(f"[green]Вы выбрали строку:[/green] {selected_line}")
 

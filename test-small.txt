@@ -1,0 +1,17 @@
+commit da343f5b8129bdd54b3c690793923de2f150ec01
+Author: Иван Иванов <test@testmail.ru>
+Date:   Wed Oct 23 14:29:54 2024 +0300
+
+    feat: Добавлен функционал backoff для подтверждения состояния UNHEALTHY монитора
+
+commit 632e1cf7276b4af73aec780ded696fcdd9c2db37
+Author: Иван Иванов <test@testmail.ru>
+Date:   Tue Oct 8 11:59:23 2024 +0300
+
+    fix: Правка тестов для прохождения
+
+commit 5ead488191d49bf091e62f8590e78cf9b00e7533
+Author: Иван Иванов <test@testmail.ru>
+Date:   Tue Oct 8 11:45:54 2024 +0300
+
+    feat: При регистрации мониторов добавлен метод проверки соответствия модели
