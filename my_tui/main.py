@@ -1,19 +1,21 @@
 """Main Application for Git Commit Date Changer"""
 
+import argparse
 import os
 import re
 import signal
 import subprocess
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
 import questionary
 from rich.console import Console
 from rich.panel import Panel
 
-import argparse
-from pathlib import Path
+GIT_LOG_CMD = "git log --pretty"
+GIT_SET_DATE_TEMPLATE = 'git filter-branch -f --env-filter \'if [ $GIT_COMMIT = {} ]; then export GIT_COMMITTER_DATE="{}"; export GIT_AUTHOR_DATE="{}"; fi\''
 
 
 console = Console()
@@ -127,80 +129,7 @@ def convert_input_date_to_commit_date(date_string: str) -> str:
     return dt.strftime("%a %b %d %H:%M:%S %Y %z")
 
 
-# def get_git_log(repo_path: str, timeout: int = 10) -> List[str]:
-#     """
-#     Retrieves the Git log output for a given repository.
-#     Args:
-#         repo_path (str): Path to the Git repository.
-#         timeout (int, optional): Timeout in seconds. Defaults to 10.
-
-#     Returns:
-#         List[str]: Output lines from the Git log command.
-#     """
-#     cmd = "git log --pretty"
-#     try:
-#         process = subprocess.Popen(
-#             cmd,
-#             cwd=repo_path,
-#             shell=True,
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             preexec_fn=os.setsid,
-#         )
-#         stdout, _ = process.communicate(timeout=timeout)
-
-#         if process.returncode != 0:
-#             raise subprocess.CalledProcessError(process.returncode, cmd, stdout)
-#     except subprocess.CalledProcessError as e:
-#         sys.stderr.write(e.output)
-#     except subprocess.TimeoutExpired:
-#         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-#         sys.stderr.write("Killed by timeout")
-#     else:
-#         return str(stdout, "utf-8").split("\n")
-
-
-# GIT_SET_DATE_TEMPLATE = 'git filter-branch -f --env-filter \'if [ $GIT_COMMIT = {} ]; then export GIT_COMMITTER_DATE="{}"; export GIT_AUTHOR_DATE="{}"; fi\''
-
-
-# def set_git_date(
-#     repo_path: str, commit: Commit, new_date: str, timeout: int = 600
-# ) -> None:
-#     """
-#     Sets a new date for a Git commit.
-
-#     Args:
-#         repo_path (str): Path to the Git repository.
-#         commit (Commit): Commit object.
-#         new_date (str): New date in '2024.10.8 11:59:23 +0300' format.
-#         timeout (int, optional): Timeout in seconds. Defaults to 600.
-#     """
-#     cmd = GIT_SET_DATE_TEMPLATE.format(commit.hash, new_date, new_date)
-#     try:
-#         process = subprocess.Popen(
-#             cmd,
-#             cwd=repo_path,
-#             shell=True,
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             preexec_fn=os.setsid,
-#         )
-#         stdout, _ = process.communicate(timeout=timeout)
-
-#         if process.returncode != 0:
-#             raise subprocess.CalledProcessError(process.returncode, cmd, stdout)
-#     except subprocess.CalledProcessError as e:
-#         sys.stderr.write(e.output)
-#     except subprocess.TimeoutExpired:
-#         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-#         sys.stderr.write("Killed by timeout")
-
-
-def execute_system_command(
-    cmd: str, 
-    cwd: str, 
-    timeout: int = 10
-) -> tuple:
+def execute_system_command(cmd: str, cwd: str, timeout: int = 10) -> tuple:
     """
     Выполняет системную команду с обработкой ошибок и таймаутом.
 
@@ -211,7 +140,7 @@ def execute_system_command(
 
     Returns:
         tuple: Кортеж, содержащий вывод команды (stdout) и индикатор ошибки (bool).
-               Если команда выполнилась успешно, возвращает (stdout, False), 
+               Если команда выполнилась успешно, возвращает (stdout, False),
                в случае ошибки или таймаута - (error_message, True).
     """
     try:
@@ -221,28 +150,24 @@ def execute_system_command(
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            preexec_fn=os.setsid
+            preexec_fn=os.setsid,
         )
         stdout, _ = process.communicate(timeout=timeout)
-        
+
         if process.returncode != 0:
             raise subprocess.CalledProcessError(process.returncode, cmd, stdout)
-        
+
         return str(stdout, "utf-8"), False
-    
+
     except subprocess.CalledProcessError as e:
         sys.stderr.write(f"Command '{cmd}' failed with error:\n{e.output}")
         return str(e.output), True
-    
+
     except subprocess.TimeoutExpired:
         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
         error_msg = f"Command '{cmd}' killed by timeout ({timeout}s)"
         sys.stderr.write(error_msg + "\n")
         return error_msg, True
-
-
-GIT_LOG_CMD = "git log --pretty"
-GIT_SET_DATE_TEMPLATE = 'git filter-branch -f --env-filter \'if [ $GIT_COMMIT = {} ]; then export GIT_COMMITTER_DATE="{}"; export GIT_AUTHOR_DATE="{}"; fi\''
 
 
 def get_git_log(repo_path: str, timeout: int = 10) -> List[str]:
@@ -261,10 +186,10 @@ def get_git_log(repo_path: str, timeout: int = 10) -> List[str]:
 
 
 def set_git_date(
-    repo_path: str, 
-    commit: 'Commit',  # Принято использовать строковые литералы для forward reference
-    new_date: str, 
-    timeout: int = 600
+    repo_path: str,
+    commit: "Commit",  # Принято использовать строковые литералы для forward reference
+    new_date: str,
+    timeout: int = 600,
 ) -> None:
     """
     Sets a new date for a Git commit.
@@ -283,17 +208,16 @@ def main() -> None:
     """
     Main application loop.
     """
-    # repo_path = "/home/andrew/TEST_GIT"  # TODO: Add argument for repository path
-    parser = argparse.ArgumentParser(description='Git Commit Date Changer')
-    parser.add_argument('repo_path', type=str, help='Path to the Git repository')
+    parser = argparse.ArgumentParser(description="Git Commit Date Changer")
+    parser.add_argument("repo_path", type=str, help="Path to the Git repository")
     args = parser.parse_args()
 
-    # Приводим путь к абсолютному
     repo_path = Path(args.repo_path).resolve()
 
-    # Проверяем, что путь указывает на существующую директорию (не обязательно, но рекомендуется для повышения robustness)
     if not repo_path.is_dir():
-        console.print(f"[red]Ошибка: '{repo_path}' не является существующей директорией.[/red]")
+        console.print(
+            f"[red]Ошибка: '{repo_path}' не является существующей директорией.[/red]"
+        )
         return
     console.print(Panel(str(repo_path), highlight=True, title="Выбранный репозиторий"))
     while True:
