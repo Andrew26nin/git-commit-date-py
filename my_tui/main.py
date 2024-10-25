@@ -1,4 +1,5 @@
 """Main Application for Git Commit Date Changer"""
+
 import os
 import re
 import signal
@@ -14,24 +15,6 @@ from rich.panel import Panel
 console = Console()
 
 
-def read_lines_from_file(filename: str) -> List[str]:
-    """
-    Reads lines from a file.
-
-    Args:
-        filename (str): Name of the file to read from.
-
-    Returns:
-        List[str]: List of lines from the file. Empty list if file not found.
-    """
-    try:
-        with open(filename, "r") as file:
-            return file.readlines()
-    except FileNotFoundError:
-        console.print(f"[red]File {filename} not found![/red]")
-        return []
-
-
 class Commit:
     """
     Represents a Git Commit.
@@ -43,6 +26,7 @@ class Commit:
         date (str): Commit date.
         subject (str): Commit subject.
     """
+
     def __init__(self, hash: str, name: str, email: str, date: str, subject: str):
         self.hash = hash
         self.name = name
@@ -175,7 +159,9 @@ def get_git_log(repo_path: str, timeout: int = 10) -> List[str]:
 GIT_SET_DATE_TEMPLATE = 'git filter-branch -f --env-filter \'if [ $GIT_COMMIT = {} ]; then export GIT_COMMITTER_DATE="{}"; export GIT_AUTHOR_DATE="{}"; fi\''
 
 
-def set_git_date(repo_path: str, commit: Commit, new_date: str, timeout: int = 600) -> None:
+def set_git_date(
+    repo_path: str, commit: Commit, new_date: str, timeout: int = 600
+) -> None:
     """
     Sets a new date for a Git commit.
 
@@ -204,6 +190,8 @@ def set_git_date(repo_path: str, commit: Commit, new_date: str, timeout: int = 6
     except subprocess.TimeoutExpired:
         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
         sys.stderr.write("Killed by timeout")
+
+
 def main() -> None:
     """
     Main application loop.
